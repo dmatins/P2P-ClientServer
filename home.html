@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="style.css">
+<script src="classes.js"></script>
+</head>
+<body onload="startAnimation()">
+<p>Client - Server info here.</p>
+<p>Choose animation parameters here.</p>
+<button onclick="toggleRunning()">Start/Pause</button>
+Some parameter :
+<select>
+  <option value=128>128 Bytes</option>
+  <option value=256>256 Bytes</option>
+  <option value=512>512 Bytes</option>
+  <option value=1028>1028 Bytes</option>
+</select>
+Another parameter :
+<select>
+  <option value=128>128 Bytes</option>
+  <option value=256>256 Bytes</option>
+  <option value=512>512 Bytes</option>
+  <option value=1028>1028 Bytes</option>
+</select>
+<p></p>
+<script>
+
+var travellingPackets = [];
+var server;
+var myClient;
+var isAnimationRunning = false;
+var timerTick = 0;
+
+function toggleRunning(){
+    if(isAnimationRunning)
+        isAnimationRunning = false;
+    else 
+        isAnimationRunning = true;
+}
+
+function startAnimation() {
+    client = new MyClient("red", 10, 120);
+    server = new MyServer(200, 90);
+    animationCanvas.initializeAndStart();
+}
+
+var animationCanvas = {
+    width : 480,
+    height : 270,
+    initializeAndStart : function() {
+        var canvas = document.createElement("canvas");
+        canvas.width = this.width;
+        canvas.height = this.height;
+        this.context = canvas.getContext("2d");
+        document.body.appendChild(canvas);
+        this.interval = setInterval(updateAnimation, 20);
+    }
+}
+
+function updateAnimation() {
+    animationCanvas.context.clearRect(0, 0, animationCanvas.width, animationCanvas.height);
+
+    if(isAnimationRunning){
+        timerTick += 1;
+
+        if(Math.random() > 0.95){
+            travellingPackets.push(client.sendPacket(100,100));
+            travellingPackets.push(server.sendPacket(300,300));
+        }
+
+        for (i = 0; i < travellingPackets.length; i += 1) {
+            if (client.detectCollision(travellingPackets[i])) {
+                
+            }
+            if (server.detectCollision(travellingPackets[i])) {
+                
+            }
+        }
+
+        for (i = 0; i < travellingPackets.length; i += 1)
+            travellingPackets[i].updatePosition();
+    }
+
+    for (i = 0; i < travellingPackets.length; i += 1)
+        travellingPackets[i].draw(animationCanvas.context);
+    
+    client.draw(animationCanvas.context);
+    server.draw(animationCanvas.context);
+}
+</script>
+</body>
+</html>
