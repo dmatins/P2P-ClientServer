@@ -6,7 +6,7 @@ Networking project displaying peer to peer and client server file transfers
 python -m SimpleHTTPServer
 
 # To view visualization from server
-http://localhost:8000/
+http://localhost:8000/home.html
 
 Where 8000 is the port that the python server gives {Serving HTTP on 0.0.0.0 port 8000 ...}
 
