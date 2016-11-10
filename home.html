@@ -7,7 +7,6 @@
 <body onload="startAnimation()">
 <p>Client - Server info here.</p>
 <p>Choose animation parameters here.</p>
-<button onclick="toggleRunning()">Start/Pause</button>
 Some parameter :
 <select>
   <option value=128>128 Bytes</option>
@@ -22,12 +21,14 @@ Another parameter :
   <option value=512>512 Bytes</option>
   <option value=1028>1028 Bytes</option>
 </select>
+</br>
+<button onclick="toggleRunning()">Start/Pause</button>
 <p></p>
 <script>
 
 var travellingPackets = [];
 var server;
-var myClient;
+var clients = [];
 var isAnimationRunning = false;
 var timerTick = 0;
 
@@ -39,14 +40,15 @@ function toggleRunning(){
 }
 
 function startAnimation() {
-    client = new MyClient("red", 10, 120);
-    server = new MyServer(200, 90);
+    clients.push(new MyClient("red", 10, 120, "Client-1"));
+    clients.push(new MyClient("green", 200, 250, "Client-2"));
+    server = new MyServer(200, 90, "Server");
     animationCanvas.initializeAndStart();
 }
 
 var animationCanvas = {
-    width : 480,
-    height : 270,
+    width : 500,
+    height : 300,
     initializeAndStart : function() {
         var canvas = document.createElement("canvas");
         canvas.width = this.width;
@@ -64,27 +66,33 @@ function updateAnimation() {
         timerTick += 1;
 
         if(Math.random() > 0.95){
-            travellingPackets.push(client.sendPacket(100,100));
-            travellingPackets.push(server.sendPacket(300,300));
+            for (j = 0; j < clients.length; j++){
+                travellingPackets.push(clients[j].sendPacket(210, 100));
+            }
+            travellingPackets.push(server.sendPacket(15, 130));
         }
 
-        for (i = 0; i < travellingPackets.length; i += 1) {
-            if (client.detectCollision(travellingPackets[i])) {
-                
+        for (i = 0; i < travellingPackets.length; i++) {
+            for (j = 0; j < clients.length; j++) {
+                if (clients[j].detectCollision(travellingPackets[i])) {
+                    travellingPackets.splice(i,1);
+                }
             }
             if (server.detectCollision(travellingPackets[i])) {
-                
+                travellingPackets.splice(i,1);
             }
         }
 
-        for (i = 0; i < travellingPackets.length; i += 1)
+        for (i = 0; i < travellingPackets.length; i++)
             travellingPackets[i].updatePosition();
     }
 
-    for (i = 0; i < travellingPackets.length; i += 1)
+    for (i = 0; i < travellingPackets.length; i++)
         travellingPackets[i].draw(animationCanvas.context);
     
-    client.draw(animationCanvas.context);
+    for (j = 0; j < clients.length; j++)
+        clients[j].draw(animationCanvas.context);
+
     server.draw(animationCanvas.context);
 }
 </script>
