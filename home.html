@@ -28,6 +28,8 @@ Another parameter :
 
 var travellingPackets = [];
 var server;
+var router;
+var links;
 var clients = [];
 var isAnimationRunning = false;
 var timerTick = 0;
@@ -40,15 +42,29 @@ function toggleRunning(){
 }
 
 function startAnimation() {
-    clients.push(new MyClient("red", 10, 120, "Client-1"));
-    clients.push(new MyClient("green", 200, 250, "Client-2"));
-    server = new MyServer(200, 90, "Server");
+    clients.push(new MyClient("red", 35, 120, "Client-1"));
+    clients.push(new MyClient("green", 100, 290, "Client-2"));
+    clients.push(new MyClient("yellow", 235, 350, "Client-3"));
+    clients.push(new MyClient("blue", 370, 290, "Client-4"));
+    clients.push(new MyClient("grey", 435, 120, "Client-5"));
+    server = new MyServer(235, 35, "Server");
+    var routerX = 235;
+    var routerY = 175;
+    links = {
+        "Server" : [{x : routerX, y : routerY}, {x : server.x, y : server.y}], 
+        "Client-1" : [{x : routerX, y : routerY}, {x : clients[0].x, y : clients[0].y}], 
+        "Client-2" : [{x : routerX, y : routerY}, {x : clients[1].x, y : clients[1].y}],
+        "Client-3" : [{x : routerX, y : routerY}, {x : clients[2].x, y : clients[2].y}],
+        "Client-4" : [{x : routerX, y : routerY}, {x : clients[3].x, y : clients[3].y}],
+        "Client-5" : [{x : routerX, y : routerY}, {x : clients[4].x, y : clients[4].y}]
+    };
+    router = new MyRouterNet(routerX, routerY, links);
     animationCanvas.initializeAndStart();
 }
 
 var animationCanvas = {
     width : 500,
-    height : 300,
+    height : 400,
     initializeAndStart : function() {
         var canvas = document.createElement("canvas");
         canvas.width = this.width;
@@ -66,34 +82,39 @@ function updateAnimation() {
         timerTick += 1;
 
         if(Math.random() > 0.95){
-            for (j = 0; j < clients.length; j++){
-                travellingPackets.push(clients[j].sendPacket(210, 100));
+            for (var k = 0; k < clients.length; k++) {
+                travellingPackets.push(server.sendPacket(router.x, router.y, clients[k].type));
             }
-            travellingPackets.push(server.sendPacket(15, 130));
         }
 
-        for (i = 0; i < travellingPackets.length; i++) {
-            for (j = 0; j < clients.length; j++) {
-                if (clients[j].detectCollision(travellingPackets[i])) {
+        for (var i = 0; i < travellingPackets.length; i++) {
+            for (var j = 0; j < clients.length; j++) {
+                if(clients[j].detectCollision(travellingPackets[i])) {
                     travellingPackets.splice(i,1);
                 }
             }
-            if (server.detectCollision(travellingPackets[i])) {
+            if(router.route(travellingPackets[i])) {
                 travellingPackets.splice(i,1);
             }
         }
 
-        for (i = 0; i < travellingPackets.length; i++)
+        for (var l = 0; l < router.packetBuffer.length; l++)
+            travellingPackets.push(router.packetBuffer[l]);
+        
+        router.packetBuffer = [];
+
+        for (var i = 0; i < travellingPackets.length; i++)
             travellingPackets[i].updatePosition();
     }
 
-    for (i = 0; i < travellingPackets.length; i++)
+    for (var i = 0; i < travellingPackets.length; i++)
         travellingPackets[i].draw(animationCanvas.context);
     
-    for (j = 0; j < clients.length; j++)
+    for (var j = 0; j < clients.length; j++)
         clients[j].draw(animationCanvas.context);
 
     server.draw(animationCanvas.context);
+    router.draw(animationCanvas.context);
 }
 </script>
 </body>
