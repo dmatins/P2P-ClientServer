@@ -21,6 +21,21 @@ function drawFileBar(context, x, y, fileInfo){
     context.strokeRect(x, y, width, barSize);
 }
 
+function adjustLink(link){
+    var deltaX = link.destX - link.x,
+        deltaY = link.destY - link.y,
+        rad = - Math.atan2(deltaX,deltaY);;
+
+    var dir = -8;
+
+    link.x += dir*Math.cos(rad);
+    link.destX += dir*Math.cos(rad);
+    link.y += dir*Math.sin(rad);
+    link.destY += dir*Math.sin(rad);
+
+    return link;
+}
+
 function MyServer(x, y, type) {
     this.type = type;
     this.width = 60;
@@ -28,7 +43,11 @@ function MyServer(x, y, type) {
     this.x = x;
     this.y = y;
     this.color = "orange";
+    this.link;
     this.capturedPackets = [{color : this.color, proportion : 1.0}];
+    this.updateLink = function(link){
+        this.link = link;
+    }
     this.draw = function(context) {
         var imageObj = new Image();
         imageObj.onload = function() {
@@ -40,8 +59,8 @@ function MyServer(x, y, type) {
 
         drawText(context, this.x, this.y - 4, 13, "black", this.type);
     }
-    this.sendPacket = function(destX, destY, dest) {
-        return new MyPacket(this.color, this.x, this.y, destX, destY, this.type, dest);
+    this.sendPacket = function(dest) {
+        return new MyPacket(this.color, this.link, this.type, dest);
     }
 }
 
@@ -52,6 +71,7 @@ function MyClient(color, x, y, type) {
     this.height = 40;
     this.x = x;
     this.y = y;
+    this.link;
     this.capturedPackets = [];
     this.draw = function(context) {
         var imageObj = new Image();
@@ -64,8 +84,11 @@ function MyClient(color, x, y, type) {
 
         drawText(context, this.x, this.y - 4, 13, "black", this.type);
     }
-    this.sendPacket = function(destX, destY, dest) {
-        return new MyPacket(this.color, this.x, this.y, destX, destY, this.type, dest);
+    this.updateLink = function(link){
+        this.link = link;
+    }
+    this.sendPacket = function(dest) {
+        return new MyPacket(this.color, this.link, this.type, dest);
     }
     this.detectCollision = function(obj) {
         if(obj == null || obj.from === this.type)
@@ -93,25 +116,19 @@ function MyClient(color, x, y, type) {
     }
 }
 
-function MyRouterNet(x, y, links) {
+function MyRouterNet(x, y) {
     this.type = "router";
     this.width = 60;
     this.height = 50;
     this.x = x;
     this.y = y;
     this.packetBuffer = [];
-    this.links = links;
+    this.links = [];
+    this.updateLinks = function(links){
+        for(var l in links)
+            this.links[l] = adjustLink(new MyLink(links[l].x, links[l].y, links[l].destX, links[l].destY));
+    }
     this.draw = function(context) {
-        for (var l in this.links) {
-            var link = links[l];
-            context.beginPath();
-            context.moveTo(link[0].x, link[0].y);
-            context.lineTo(link[1].x, link[1].y);
-            context.strokeStyle = "black";
-            context.lineWidth = 1;
-            context.stroke();
-        }
-
         var imageObj = new Image();
         imageObj.onload = function() {
         };
@@ -127,38 +144,48 @@ function MyRouterNet(x, y, links) {
             if((this.y <= obj.y && obj.y <= this.y + this.height) || (this.y >= obj.y && this.y <= obj.y + obj.height)){
                 // this should be links instead of x,y
                 var link = this.links[obj.dest];
-                this.packetBuffer.push(new MyPacket(obj.color, link[0].x, link[0].y, link[1].x, link[1].y, this.type, obj.dest));
+                this.packetBuffer.push(new MyPacket(obj.color, link, this.type, obj.dest));
                 return true;
             }
         }
     }
 }
 
-function MyPacket(color, x, y, destX, destY, from, dest) {
+function MyPacket(color, link, from, dest) {
     this.dest = dest;
     this.from = from;
     this.color = color;
     this.width = 5;
     this.height = 5;
-    this.x = x;
-    this.y = y;
-    this.destX = destX;
-    this.desty = destY;
+    this.x = link.x;
+    this.y = link.y;
+    this.destX = link.destX;
+    this.destY = link.destY;
     this.draw = function(context) {
         context.fillStyle = this.color;
         context.fillRect(this.x, this.y, this.width, this.height);
     }
     this.updatePosition = function() {
-        if(this.x != destX){
-            if(this.x < destX)
-                this.x = this.x + 1;
-            else
-                this.x = this.x - 1;
-        } if(this.y != destY){
-            if(this.y < destY)
-                this.y = this.y + 1;
-            else
-                this.y = this.y - 1;
-        }
+        var deltaX = this.destX - this.x,
+        deltaY = this.destY - this.y,
+        rad = Math.atan2(deltaY,deltaX);;
+
+        this.x += Math.cos(rad);
+        this.y += Math.sin(rad);
+    }
+}
+
+function MyLink(x, y, destX, destY) {
+    this.x = x;
+    this.y = y;
+    this.destX = destX;
+    this.destY = destY;
+    this.draw = function(context) {
+        context.beginPath();
+        context.moveTo(this.x, this.y);
+        context.lineTo(this.destX, this.destY);
+        context.strokeStyle = "black";
+        context.lineWidth = 1;
+        context.stroke();
     }
 }

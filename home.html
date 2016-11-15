@@ -5,6 +5,13 @@
 <script src="classes.js"></script>
 </head>
 <body onload="startAnimation()">
+<script>
+    function startAnimation(){
+        CS_start();
+        P2P_start();
+    }
+</script>
+<div id="clientServer">
 <p>Client - Server info here.</p>
 <p>Choose animation parameters here.</p>
 Some parameter :
@@ -22,100 +29,34 @@ Another parameter :
   <option value=1028>1028 Bytes</option>
 </select>
 </br>
-<button onclick="toggleRunning()">Start/Pause</button>
+<button onclick="toggleCSRunning()">Start/Pause</button>
 <p></p>
-<script>
+<canvas id="CS_Canvas" width="500" height="400"></canvas>
+<script src="client-server.js"></script>
+</div>
 
-var travellingPackets = [];
-var server;
-var router;
-var links;
-var clients = [];
-var isAnimationRunning = false;
-var timerTick = 0;
-
-function toggleRunning(){
-    if(isAnimationRunning)
-        isAnimationRunning = false;
-    else 
-        isAnimationRunning = true;
-}
-
-function startAnimation() {
-    clients.push(new MyClient("red", 35, 120, "Client-1"));
-    clients.push(new MyClient("green", 100, 290, "Client-2"));
-    clients.push(new MyClient("yellow", 235, 350, "Client-3"));
-    clients.push(new MyClient("blue", 370, 290, "Client-4"));
-    clients.push(new MyClient("grey", 435, 120, "Client-5"));
-    server = new MyServer(235, 35, "Server");
-    var routerX = 235;
-    var routerY = 175;
-    links = {
-        "Server" : [{x : routerX, y : routerY}, {x : server.x, y : server.y}], 
-        "Client-1" : [{x : routerX, y : routerY}, {x : clients[0].x, y : clients[0].y}], 
-        "Client-2" : [{x : routerX, y : routerY}, {x : clients[1].x, y : clients[1].y}],
-        "Client-3" : [{x : routerX, y : routerY}, {x : clients[2].x, y : clients[2].y}],
-        "Client-4" : [{x : routerX, y : routerY}, {x : clients[3].x, y : clients[3].y}],
-        "Client-5" : [{x : routerX, y : routerY}, {x : clients[4].x, y : clients[4].y}]
-    };
-    router = new MyRouterNet(routerX, routerY, links);
-    animationCanvas.initializeAndStart();
-}
-
-var animationCanvas = {
-    width : 500,
-    height : 400,
-    initializeAndStart : function() {
-        var canvas = document.createElement("canvas");
-        canvas.width = this.width;
-        canvas.height = this.height;
-        this.context = canvas.getContext("2d");
-        document.body.appendChild(canvas);
-        this.interval = setInterval(updateAnimation, 20);
-    }
-}
-
-function updateAnimation() {
-    animationCanvas.context.clearRect(0, 0, animationCanvas.width, animationCanvas.height);
-
-    if(isAnimationRunning){
-        timerTick += 1;
-
-        if(Math.random() > 0.95){
-            for (var k = 0; k < clients.length; k++) {
-                travellingPackets.push(server.sendPacket(router.x, router.y, clients[k].type));
-            }
-        }
-
-        for (var i = 0; i < travellingPackets.length; i++) {
-            for (var j = 0; j < clients.length; j++) {
-                if(clients[j].detectCollision(travellingPackets[i])) {
-                    travellingPackets.splice(i,1);
-                }
-            }
-            if(router.route(travellingPackets[i])) {
-                travellingPackets.splice(i,1);
-            }
-        }
-
-        for (var l = 0; l < router.packetBuffer.length; l++)
-            travellingPackets.push(router.packetBuffer[l]);
-        
-        router.packetBuffer = [];
-
-        for (var i = 0; i < travellingPackets.length; i++)
-            travellingPackets[i].updatePosition();
-    }
-
-    for (var i = 0; i < travellingPackets.length; i++)
-        travellingPackets[i].draw(animationCanvas.context);
-    
-    for (var j = 0; j < clients.length; j++)
-        clients[j].draw(animationCanvas.context);
-
-    server.draw(animationCanvas.context);
-    router.draw(animationCanvas.context);
-}
-</script>
+<div id="peer2Peer">
+<p>Peer to Peer info here.</p>
+<p>Choose animation parameters here.</p>
+Some parameter :
+<select>
+  <option value=128>128 Bytes</option>
+  <option value=256>256 Bytes</option>
+  <option value=512>512 Bytes</option>
+  <option value=1028>1028 Bytes</option>
+</select>
+Another parameter :
+<select>
+  <option value=128>128 Bytes</option>
+  <option value=256>256 Bytes</option>
+  <option value=512>512 Bytes</option>
+  <option value=1028>1028 Bytes</option>
+</select>
+</br>
+<button onclick="toggleP2PRunning()">Start/Pause</button>
+<p></p>
+<canvas id="P2P_Canvas" width="500" height="400"></canvas>
+<script src="peer2Peer.js"></script>
+</div>
 </body>
 </html>
