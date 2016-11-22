@@ -6,56 +6,70 @@
 </head>
 <body onload="startAnimation()">
 <script>
+    var isRunning = false;
+    function toggleRunning(){
+        if(isRunning) isRunning = false;
+        else isRunning = true;
+    }
     function startAnimation(){
         CS_start();
         P2P_start();
     }
+    function resetAnimation(){
+        isRunning = false;
+        CS_reset();
+        P2P_reset();
+    }
 </script>
+<button id="starter" onclick="toggleRunning()">Start/Pause</button>
+<button id="reseter" onclick="resetAnimation()">Reset</button>
+</br>
 <div id="clientServer">
 <p>Client - Server info here.</p>
-<p>Choose animation parameters here.</p>
-Some parameter :
-<select>
+Server Upload Speed :
+<select id="cs_serverUploadSpeed">
   <option value=128>128 Bytes</option>
   <option value=256>256 Bytes</option>
   <option value=512>512 Bytes</option>
   <option value=1028>1028 Bytes</option>
 </select>
-Another parameter :
-<select>
+File Size :
+<select id="cs_fileSize">
   <option value=128>128 Bytes</option>
   <option value=256>256 Bytes</option>
   <option value=512>512 Bytes</option>
   <option value=1028>1028 Bytes</option>
 </select>
 </br>
-<button onclick="toggleCSRunning()">Start/Pause</button>
+Algorithm :
+<select id="cs_algorithm" onchange="aglorithmSelectFunction()">
+  <option value="Round Robin">Round Robin</option>
+  <option value="FIFO">FIFO</option>
+</select>
 <p></p>
-<canvas id="CS_Canvas" width="500" height="400"></canvas>
+<canvas id="CS_Canvas" width="500" height="450"></canvas>
 <script src="client-server.js"></script>
 </div>
 
 <div id="peer2Peer">
 <p>Peer to Peer info here.</p>
-<p>Choose animation parameters here.</p>
-Some parameter :
-<select>
+Server Upload Speed :
+<select id="p2p_serverUploadSpeed">
   <option value=128>128 Bytes</option>
   <option value=256>256 Bytes</option>
   <option value=512>512 Bytes</option>
   <option value=1028>1028 Bytes</option>
 </select>
-Another parameter :
-<select>
+File Size :
+<select id="p2p_fileSize">
   <option value=128>128 Bytes</option>
   <option value=256>256 Bytes</option>
   <option value=512>512 Bytes</option>
   <option value=1028>1028 Bytes</option>
 </select>
 </br>
-<button onclick="toggleP2PRunning()">Start/Pause</button>
 <p></p>
-<canvas id="P2P_Canvas" width="500" height="400"></canvas>
+<canvas id="P2P_Canvas" width="500" height="450"></canvas>
 <script src="peer2Peer.js"></script>
 </div>
 </body>

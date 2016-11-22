@@ -14,8 +14,8 @@ function drawFileBar(context, x, y, fileInfo){
         var amountToFill = info.proportion * barSize;
 
         context.fillStyle = info.color;
+        currentY = y + info.filePosition * barSize;
         context.fillRect(x, currentY, width, amountToFill);
-        currentY += amountToFill;
     }
     context.fillStyle = "grey";
     context.strokeRect(x, y, width, barSize);
@@ -44,7 +44,7 @@ function MyServer(x, y, type) {
     this.y = y;
     this.color = "orange";
     this.link;
-    this.capturedPackets = [{color : this.color, proportion : 1.0}];
+    this.capturedPackets = [{color : this.color, proportion : 1.0, filePosition : 0.0}];
     this.updateLink = function(link){
         this.link = link;
     }
@@ -59,8 +59,8 @@ function MyServer(x, y, type) {
 
         drawText(context, this.x, this.y - 4, 13, "black", this.type);
     }
-    this.sendPacket = function(dest) {
-        return new MyPacket(this.color, this.link, this.type, dest);
+    this.sendPacket = function(dest, filePosition) {
+        return new MyPacket(this.color, this.link, this.type, dest, 0.0, 0.01);
     }
 }
 
@@ -80,15 +80,18 @@ function MyClient(color, x, y, type) {
         imageObj.src = './images/Computer.png';
         context.drawImage(imageObj, this.x, this.y, this.width, this.height);
 
-        drawFileBar(context, this.x - 8, this.y - 8, this.capturedPackets);
+        if(this.type === "Client-4" || this.type === "Client-5")
+            drawFileBar(context, this.x + this.width + 8, this.y - 8, this.capturedPackets);
+        else 
+            drawFileBar(context, this.x - 8, this.y - 8, this.capturedPackets);
 
         drawText(context, this.x, this.y - 4, 13, "black", this.type);
+
+        context.fillStyle = this.color;
+        context.fillRect(this.x + this.width/2 - 5, this.y + this.height, 10, 10);
     }
     this.updateLink = function(link){
         this.link = link;
-    }
-    this.sendPacket = function(dest) {
-        return new MyPacket(this.color, this.link, this.type, dest);
     }
     this.detectCollision = function(obj) {
         if(obj == null || obj.from === this.type)
@@ -100,15 +103,111 @@ function MyClient(color, x, y, type) {
                 for (var i=0; i < this.capturedPackets.length; i++) {
                     info = this.capturedPackets[i];
                     if(info.color === obj.color){
-                        info.proportion += 0.01;
+                        info.proportion += obj.packetSize;
                         newPacket = false;
                     }
                 }
                 if(newPacket){
                     info = {};
                     info.color = obj.color;
-                    info.proportion = 0.01;
+                    info.proportion = obj.packetSize;
+                    info.filePosition = obj.filePosition;
                     this.capturedPackets.push(info);
+                }
+                return true;
+            }
+        }
+    }
+}
+
+function MyP2PServer(x, y, type, fileInfo) {
+    this.type = type;
+    this.width = 60;
+    this.height = 60;
+    this.x = x;
+    this.y = y;
+    this.color = "orange";
+    this.link;
+    this.capturedPackets = [{color : this.color, proportion : 1.0, filePosition : 0.0}];
+    this.fileInfo = fileInfo;
+    this.updateLink = function(link){
+        this.link = link;
+    }
+    this.draw = function(context) {
+        var imageObj = new Image();
+        imageObj.onload = function() {
+        };
+        imageObj.src = './images/database.png';
+        context.drawImage(imageObj, this.x, this.y, this.width, this.height);
+
+        drawFileBar(context, this.x - 8, this.y - 8, this.capturedPackets);
+
+        drawText(context, this.x, this.y - 4, 13, "black", this.type);
+    }
+    this.sendPacket = function(dest) {
+        return new MyPacket(this.color, this.link, this.type, dest, this.fileInfo[dest].filePosition, this.fileInfo[dest].filePercentage/10);
+    }
+}
+
+function MyP2PClient(color, x, y, type) {
+    this.type = type;
+    this.color = color;
+    this.width = 40;
+    this.height = 40;
+    this.x = x;
+    this.y = y;
+    this.link;
+    this.packetBuffer = [];
+    this.capturedPackets = [];
+    this.draw = function(context) {
+        var imageObj = new Image();
+        imageObj.onload = function() {
+        };
+        imageObj.src = './images/Computer.png';
+        context.drawImage(imageObj, this.x, this.y, this.width, this.height);
+
+        if(this.type === "Client-4" || this.type === "Client-5")
+            drawFileBar(context, this.x + this.width + 8, this.y - 8, this.capturedPackets);
+        else 
+            drawFileBar(context, this.x - 8, this.y - 8, this.capturedPackets);
+
+        drawText(context, this.x, this.y - 4, 13, "black", this.type);
+
+        context.fillStyle = this.color;
+        context.fillRect(this.x + this.width/2 - 5, this.y + this.height, 10, 10);
+    }
+    this.updateLink = function(link){
+        this.link = link;
+    }
+    this.sendPacket = function(dest) {
+        return new MyPacket(this.color, this.link, this.type, dest, this.packetBuffer[0].filePosition, this.packetBuffer[0].packetSize);
+    }
+    this.detectCollision = function(obj) {
+        if(obj == null || obj.from === this.type)
+            return false;
+        if((this.x <= obj.x && obj.x <= this.x + this.width) || (this.x >= obj.x && this.x <= obj.x + obj.width)){
+            if((this.y <= obj.y && obj.y <= this.y + this.height) || (this.y >= obj.y && this.y <= obj.y + obj.height)){
+                var newPacket = true;
+                var info;
+                for (var i=0; i < this.capturedPackets.length; i++) {
+                    info = this.capturedPackets[i];
+                    if(info.color === obj.color){
+                        info.proportion += obj.packetSize;
+                        newPacket = false;
+                    }
+                }
+                if(newPacket){
+                    info = {};
+                    info.color = obj.color;
+                    info.proportion = obj.packetSize;
+                    info.filePosition = obj.filePosition;
+                    this.capturedPackets.push(info);
+                }
+                if(obj.originallyFrom === "Server"){
+                    info = {};
+                    info.filePosition = obj.filePosition;
+                    info.packetSize = obj.packetSize;
+                    this.packetBuffer.push(info);
                 }
                 return true;
             }
@@ -142,18 +241,22 @@ function MyRouterNet(x, y) {
             return false;
         if((this.x <= obj.x && obj.x <= this.x + this.width) || (this.x >= obj.x && this.x <= obj.x + obj.width)){
             if((this.y <= obj.y && obj.y <= this.y + this.height) || (this.y >= obj.y && this.y <= obj.y + obj.height)){
-                // this should be links instead of x,y
                 var link = this.links[obj.dest];
-                this.packetBuffer.push(new MyPacket(obj.color, link, this.type, obj.dest));
+                var packet = new MyPacket(obj.color, link, this.type, obj.dest, obj.filePosition, obj.packetSize);
+                packet.originallyFrom = obj.from;
+                this.packetBuffer.push(packet);
                 return true;
             }
         }
     }
 }
 
-function MyPacket(color, link, from, dest) {
+function MyPacket(color, link, from, dest, filePosition, packetSize) {
     this.dest = dest;
     this.from = from;
+    this.originallyFrom = from;
+    this.packetSize = packetSize;
+    this.filePosition = filePosition;
     this.color = color;
     this.width = 5;
     this.height = 5;
