@@ -24,51 +24,64 @@
 <button id="starter" onclick="toggleRunning()">Start/Pause</button>
 <button id="reseter" onclick="resetAnimation()">Reset</button>
 </br>
-<div id="clientServer">
-<p>Client - Server info here.</p>
-Server Upload Speed :
-<select id="cs_serverUploadSpeed">
-  <option value=128>128 Bytes</option>
-  <option value=256>256 Bytes</option>
-  <option value=512>512 Bytes</option>
-  <option value=1028>1028 Bytes</option>
-</select>
-File Size :
-<select id="cs_fileSize">
-  <option value=128>128 Bytes</option>
-  <option value=256>256 Bytes</option>
-  <option value=512>512 Bytes</option>
-  <option value=1028>1028 Bytes</option>
-</select>
-</br>
-Algorithm :
-<select id="cs_algorithm" onchange="aglorithmSelectFunction()">
+Client-Server Algorithm :
+<select id="cs_algorithm">
   <option value="Round Robin">Round Robin</option>
   <option value="FIFO">FIFO</option>
 </select>
-<p></p>
+Server Upload Speed :
+<select id="p2p_serverUploadSpeed">
+  <option value="1 kbps">1 kbps</option>
+  <option value="1 mbps">1 mbps</option>
+  <option value="1 gbps">1 gbps</option>
+</select>
+File Size :
+<select id="p2p_fileSize">
+  <option value="1 KB">1 KB</option>
+  <option value="1 MB">1 MB</option>
+  <option value="1 GB">1 GB</option>
+</select>
+</br>
+Client-1 Upload Speed :
+<select id="p2p_client-1speed">
+  <option value="1 kbps">1 kbps</option>
+  <option value="1 mbps">1 mbps</option>
+  <option value="1 gbps">1 gbps</option>
+</select>
+Client-2 Upload Speed :
+<select id="p2p_client-2speed">
+  <option value="1 kbps">1 kbps</option>
+  <option value="1 mbps">1 mbps</option>
+  <option value="1 gbps">1 gbps</option>
+</select>
+Client-3 Upload Speed :
+<select id="p2p_client-3speed">
+  <option value="1 kbps">1 kbps</option>
+  <option value="1 mbps">1 mbps</option>
+  <option value="1 gbps">1 gbps</option>
+</select>
+</br>
+Client-4 Upload Speed :
+<select id="p2p_client-4speed">
+  <option value="1 kbps">1 kbps</option>
+  <option value="1 mbps">1 mbps</option>
+  <option value="1 gbps">1 gbps</option>
+</select>
+Client-5 Upload Speed :
+<select id="p2p_client-5speed">
+  <option value="1 kbps">1 kbps</option>
+  <option value="1 mbps">1 mbps</option>
+  <option value="1 gbps">1 gbps</option>
+</select>
+</br>
+<div id="clientServer">
+<p>Client - Server</p>
 <canvas id="CS_Canvas" width="500" height="450"></canvas>
 <script src="client-server.js"></script>
 </div>
 
 <div id="peer2Peer">
-<p>Peer to Peer info here.</p>
-Server Upload Speed :
-<select id="p2p_serverUploadSpeed">
-  <option value=128>128 Bytes</option>
-  <option value=256>256 Bytes</option>
-  <option value=512>512 Bytes</option>
-  <option value=1028>1028 Bytes</option>
-</select>
-File Size :
-<select id="p2p_fileSize">
-  <option value=128>128 Bytes</option>
-  <option value=256>256 Bytes</option>
-  <option value=512>512 Bytes</option>
-  <option value=1028>1028 Bytes</option>
-</select>
-</br>
-<p></p>
+<p>Peer to Peer</p>
 <canvas id="P2P_Canvas" width="500" height="450"></canvas>
 <script src="peer2Peer.js"></script>
 </div>

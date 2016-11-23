@@ -40,6 +40,16 @@ function cs_updateAnimation() {
 
     if(isRunning){
         cs_timerTick++;
+        if(cs_hasntStartedYet){
+            var algoSelect = document.getElementById("cs_algorithm");
+            cs_algorithm = algoSelect.options[algoSelect.selectedIndex].value;
+
+            cs_server.uploadSpeed = 5;
+            for (var j = 0; j < cs_clients.length; j++){
+                var c = cs_clients[j];
+                c.uploadSpeed = fileInfo[c.type].filePercentage * 10;
+            }
+        }
         cs_hasntStartedYet = false;
 
         if(cs_timerTick % 10 === 0){
@@ -112,12 +122,5 @@ function CS_reset(){
 
     for (var j = 0; j < cs_clients.length; j++) {
         cs_clients[j].capturedPackets = [];
-    }
-}
-
-function aglorithmSelectFunction(){
-    if(cs_hasntStartedYet){
-        var algoSelect = document.getElementById("cs_algorithm");
-        cs_algorithm = algoSelect.options[algoSelect.selectedIndex].value;
     }
 }

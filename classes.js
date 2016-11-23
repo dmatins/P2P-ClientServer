@@ -58,6 +58,9 @@ function MyServer(x, y, type) {
         drawFileBar(context, this.x - 8, this.y - 8, this.capturedPackets);
 
         drawText(context, this.x, this.y - 4, 13, "black", this.type);
+
+        context.fillStyle = this.color;
+        context.fillRect(this.x + this.width, this.y, 10, 10);
     }
     this.sendPacket = function(dest, filePosition) {
         return new MyPacket(this.color, this.link, this.type, dest, 0.0, 0.01);
@@ -143,9 +146,12 @@ function MyP2PServer(x, y, type, fileInfo) {
         drawFileBar(context, this.x - 8, this.y - 8, this.capturedPackets);
 
         drawText(context, this.x, this.y - 4, 13, "black", this.type);
+
+        context.fillStyle = this.color;
+        context.fillRect(this.x + this.width, this.y, 10, 10);
     }
     this.sendPacket = function(dest) {
-        return new MyPacket(this.color, this.link, this.type, dest, this.fileInfo[dest].filePosition, this.fileInfo[dest].filePercentage/10);
+        return new MyPacket(this.color, this.link, this.type, dest, this.fileInfo[dest].filePosition, 0.01);
     }
 }
 
@@ -157,6 +163,7 @@ function MyP2PClient(color, x, y, type) {
     this.x = x;
     this.y = y;
     this.link;
+    this.uploadSpeed = 10;
     this.packetBuffer = [];
     this.capturedPackets = [];
     this.draw = function(context) {
@@ -179,8 +186,12 @@ function MyP2PClient(color, x, y, type) {
     this.updateLink = function(link){
         this.link = link;
     }
-    this.sendPacket = function(dest) {
-        return new MyPacket(this.color, this.link, this.type, dest, this.packetBuffer[0].filePosition, this.packetBuffer[0].packetSize);
+    this.sendPacket = function() {
+        var pack = this.packetBuffer.pop();
+        if(pack == null)
+            return null;
+        else 
+            return new MyPacket(this.color, this.link, this.type, pack.dest, pack.filePosition, pack.packetSize);
     }
     this.detectCollision = function(obj) {
         if(obj == null || obj.from === this.type)
@@ -204,10 +215,15 @@ function MyP2PClient(color, x, y, type) {
                     this.capturedPackets.push(info);
                 }
                 if(obj.originallyFrom === "Server"){
-                    info = {};
-                    info.filePosition = obj.filePosition;
-                    info.packetSize = obj.packetSize;
-                    this.packetBuffer.push(info);
+                    for (var j = 0; j < p2p_clients.length; j++) {
+                        if(p2p_clients[j].type !== this.type){
+                            info = {};
+                            info.filePosition = obj.filePosition;
+                            info.packetSize = obj.packetSize;
+                            info.dest = p2p_clients[j].type;
+                            this.packetBuffer.push(info);
+                        }
+                    }
                 }
                 return true;
             }
@@ -262,6 +278,7 @@ function MyPacket(color, link, from, dest, filePosition, packetSize) {
     this.height = 5;
     this.x = link.x;
     this.y = link.y;
+    this.speed = 7.0;
     this.destX = link.destX;
     this.destY = link.destY;
     this.draw = function(context) {
@@ -273,8 +290,8 @@ function MyPacket(color, link, from, dest, filePosition, packetSize) {
         deltaY = this.destY - this.y,
         rad = Math.atan2(deltaY,deltaX);;
 
-        this.x += Math.cos(rad);
-        this.y += Math.sin(rad);
+        this.x += Math.cos(rad) * this.speed;
+        this.y += Math.sin(rad) * this.speed;
     }
 }
 
