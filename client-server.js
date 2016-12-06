@@ -4,15 +4,14 @@ var cs_router;
 var cs_links = {};
 var cs_clients = [];
 var cs_timerTick = 0;
-var cs_currentClient = 0;
-var cs_currentClientData = 0.0;
-var cs_algorithm = "Round Robin";
 var cs_hasntStartedYet = true;
+var cs_tooltip = {display : false, x : 0, y: 0, source : "", dest : ""};
+
 
 function CS_start() {
     cs_clients.push(new MyClient("red", 35, 120, "Client-1"));
     cs_clients.push(new MyClient("green", 100, 290, "Client-2"));
-    cs_clients.push(new MyClient("yellow", 235, 350, "Client-3"));
+    cs_clients.push(new MyClient("purple", 235, 350, "Client-3"));
     cs_clients.push(new MyClient("blue", 370, 290, "Client-4"));
     cs_clients.push(new MyClient("grey", 435, 120, "Client-5"));
     cs_server = new MyServer(235, 35, "Server");
@@ -32,6 +31,23 @@ function CS_start() {
     cs_router.updateLinks(cs_links);
 
     cs_animationCanvas = document.getElementById("CS_Canvas");
+    cs_animationCanvas.addEventListener('mousemove', function(e) {
+        cs_tooltip.display = false;
+        var x = e.pageX - cs_animationCanvas.offsetLeft;
+        var y = e.pageY - cs_animationCanvas.offsetTop;
+
+        for (var i = 0; i < cs_travellingPackets.length; i++) {
+            var pak = cs_travellingPackets[i];
+            if(pak.x < x && pak.x + pak.width > x  &&  pak.y < y && pak.y + pak.height > y){
+                cs_tooltip.x = x;
+                cs_tooltip.y = y;
+                cs_tooltip.source = "Source: " + pak.originallyFrom;
+                cs_tooltip.dest = "Destination: " + pak.dest;
+                cs_tooltip.display = true;
+                return;
+            }
+        }
+    }, 0);
     setInterval(cs_updateAnimation, 20);
 }
 
@@ -42,41 +58,25 @@ function cs_updateAnimation() {
         cs_timerTick++;
         if(cs_hasntStartedYet){
             var algoSelect = document.getElementById("cs_algorithm");
-            cs_algorithm = algoSelect.options[algoSelect.selectedIndex].value;
+            cs_server.algorithm = algoSelect.options[algoSelect.selectedIndex].value;
 
-            cs_server.uploadSpeed = 5;
-            for (var j = 0; j < cs_clients.length; j++){
-                var c = cs_clients[j];
-                c.uploadSpeed = fileInfo[c.type].filePercentage * 10;
+            var dropdown = document.getElementById("cs_serverUploadSpeed");
+            var serverUpload = parseInt(dropdown.options[dropdown.selectedIndex].value);
+            cs_server.uploadSpeed = (1/serverUpload) * 15;
+
+            dropdown = document.getElementById("cs_fileSize");
+            var fileSize = parseInt(dropdown.options[dropdown.selectedIndex].value);
+            cs_server.fileSize = fileSize;
+
+            for (var j = 0; j < cs_clients.length; j++) {
+                cs_clients[j].fileSize = fileSize;
             }
         }
         cs_hasntStartedYet = false;
 
-        if(cs_timerTick % 10 === 0){
-            if(cs_algorithm === "Round Robin"){
-                if(cs_currentClientData < (1.0 * cs_clients.length)){
-                    var packet = cs_server.sendPacket(cs_clients[cs_currentClient].type);
-                    cs_travellingPackets.push(packet);
-                    cs_currentClientData += packet.packetSize;
-                    cs_currentClient = (cs_currentClient + 1) % 5;
-                }
-            }
-            else{
-                if(cs_currentClient < cs_clients.length){
-                    var packet = cs_server.sendPacket(cs_clients[cs_currentClient].type);
-                    cs_travellingPackets.push(packet);
-                    cs_currentClientData += packet.packetSize;
-                    if(cs_currentClientData >= 1.0){
-                        cs_currentClientData = 0.0;
-                        cs_currentClient++;
-                    }
-                }
-            }
-        }
-
-        if(cs_currentClient === cs_clients.length && cs_travellingPackets.length === 0){
-            isRunning = false;
-        }
+        var packet = cs_server.sendPacket();
+        if(packet !== null)
+            cs_travellingPackets.push(packet);
 
         for (var i = 0; i < cs_travellingPackets.length; i++) {
             for (var j = 0; j < cs_clients.length; j++) {
@@ -109,16 +109,27 @@ function cs_updateAnimation() {
 
     for (var j = 0; j < cs_clients.length; j++)
         cs_clients[j].draw(cs_animationCanvas.getContext("2d"));
+
+    if(cs_tooltip.display){
+        var cs_context = cs_animationCanvas.getContext("2d");
+        cs_context.fillStyle = '#ddd';
+        cs_context.fillRect(cs_tooltip.x + 10, cs_tooltip.y + 10, 120, 45);
+        cs_context.fillStyle = '#000';
+        cs_context.strokeRect(cs_tooltip.x + 10, cs_tooltip.y + 10, 120, 45);
+        cs_context.font = "bold 10px Consolas";
+        cs_context.fillText("Packet", cs_tooltip.x + 20, cs_tooltip.y + 25, 100);
+        cs_context.fillText(cs_tooltip.source, cs_tooltip.x + 20, cs_tooltip.y + 35, 100);
+        cs_context.fillText(cs_tooltip.dest, cs_tooltip.x + 20, cs_tooltip.y + 45, 100);
+    }
 }
 
 function CS_reset(){
     cs_travellingPackets = [];
     cs_router.packetBuffer = [];
     cs_timerTick = 0;
-    cs_currentClient = 0;
-    cs_currentClientData = 0.0;
-    cs_algorithm = "Round Robin";
+    cs_server.reset();
     cs_hasntStartedYet = true;
+    cs_tooltip = {display : false, x : 0, y: 0, source : "", dest : ""};
 
     for (var j = 0; j < cs_clients.length; j++) {
         cs_clients[j].capturedPackets = [];

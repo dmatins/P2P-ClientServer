@@ -1,19 +1,16 @@
 var p2p_travellingPackets = [];
-var p2p_fileInfo = {};
 var p2p_server;
 var p2p_router;
 var p2p_links = {};
 var p2p_clients = [];
 var p2p_timerTick = 0;
 var p2p_hasntStartedYet = true;
-var p2p_currentClient = 0;
-var p2p_totalSentClientData = 0.0;
-var p2p_currentClientPacketNumber = 0;
+var p2p_tooltip = {display : false, x : 0, y: 0, source : "", dest : ""};
 
 function P2P_start() {
     p2p_clients.push(new MyP2PClient("red", 35, 120, "Client-1"));
     p2p_clients.push(new MyP2PClient("green", 100, 290, "Client-2"));
-    p2p_clients.push(new MyP2PClient("yellow", 235, 350, "Client-3"));
+    p2p_clients.push(new MyP2PClient("purple", 235, 350, "Client-3"));
     p2p_clients.push(new MyP2PClient("blue", 370, 290, "Client-4"));
     p2p_clients.push(new MyP2PClient("grey", 435, 120, "Client-5"));
     p2p_server = new MyP2PServer(235, 35, "Server");
@@ -30,17 +27,27 @@ function P2P_start() {
     link = adjustLink(link);
     p2p_server.updateLink(link);
 
-    //TODO: should get this data from parameters
-    fileInfo = {"Client-1" : {fileAmountSent : 0.0, filePercentage : 0.2, filePosition : 0.0}, 
-"Client-2" : {fileAmountSent : 0.0, filePercentage : 0.4, filePosition : 0.2},
-"Client-3" : {fileAmountSent : 0.0, filePercentage : 0.1, filePosition : 0.6},
-"Client-4" : {fileAmountSent : 0.0, filePercentage : 0.1, filePosition : 0.7},
-"Client-5" : {fileAmountSent : 0.0, filePercentage : 0.2, filePosition : 0.8}};
-    p2p_server.fileInfo = fileInfo;
-
     p2p_router.updateLinks(p2p_links);
 
     p2p_animationCanvas = document.getElementById("P2P_Canvas");
+    p2p_animationCanvas.addEventListener('mousemove', function(e) {
+        p2p_tooltip.display = false;
+        var x = e.pageX - p2p_animationCanvas.offsetLeft;
+        var y = e.pageY - p2p_animationCanvas.offsetTop;
+
+        for (var i = 0; i < p2p_travellingPackets.length; i++) {
+            var pak = p2p_travellingPackets[i];
+            if(pak.x < x && pak.x + pak.width > x  &&  pak.y < y && pak.y + pak.height > y){
+                p2p_tooltip.x = x;
+                p2p_tooltip.y = y;
+                p2p_tooltip.source = "Source: " + pak.originallyFrom;
+                p2p_tooltip.dest = "Destination: " + pak.dest;
+                p2p_tooltip.display = true;
+                return;
+            }
+        }
+    }, 0);
+
     setInterval(p2p_updateAnimation, 20);
 }
 
@@ -51,28 +58,49 @@ function p2p_updateAnimation() {
         p2p_timerTick += 1;
 
         if(p2p_hasntStartedYet){
-            p2p_server.uploadSpeed = 5;
-            for (var j = 0; j < p2p_clients.length; j++){
-                var c = p2p_clients[j];
-                c.uploadSpeed = fileInfo[c.type].filePercentage * 10;
+            var fileInfo = {"Client-1" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0}, 
+            "Client-2" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0},
+            "Client-3" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0},
+            "Client-4" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0},
+            "Client-5" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0}};
+
+            var dropdown = document.getElementById("p2p_fileSize");
+            var fileSize = parseInt(dropdown.options[dropdown.selectedIndex].value);
+            p2p_server.fileSize = fileSize;
+
+            dropdown = document.getElementById("p2p_serverUploadSpeed");
+            var serverUpload = parseInt(dropdown.options[dropdown.selectedIndex].value);
+            p2p_server.uploadSpeed = (1/serverUpload) * 15;
+
+            var totalClientUploads = 0;
+            for (var j = 0; j < p2p_clients.length; j++) {
+                dropdown = document.getElementById("p2p_client-"+ (j + 1) +"speed");
+                totalClientUploads += parseInt(dropdown.options[dropdown.selectedIndex].value);
             }
+
+            if(serverUpload > totalClientUploads){
+
+            }
+
+            var currentFilePosition = 0.0;
+            for (var j = 0; j < p2p_clients.length; j++) {
+                dropdown = document.getElementById("p2p_client-"+ (j + 1) +"speed");
+                var clientUpload = parseInt(dropdown.options[dropdown.selectedIndex].value);
+
+                p2p_clients[j].uploadSpeed = (1/clientUpload) * 15;
+                p2p_clients[j].fileSize = fileSize;
+                fileInfo["Client-"+ (j+1)].filePercentage = clientUpload/totalClientUploads;
+                fileInfo["Client-"+ (j+1)].filePosition = currentFilePosition;
+                currentFilePosition += clientUpload/totalClientUploads;
+            }
+            
+            p2p_server.fileInfo = fileInfo;
         }
         p2p_hasntStartedYet = false;
 
-        if(p2p_timerTick % 10 === 0 && p2p_totalSentClientData < 1.0){
-            var currentClientFileInfo = fileInfo[p2p_clients[p2p_currentClient].type];
-
-            if(p2p_currentClientPacketNumber === currentClientFileInfo.filePercentage*10){
-                p2p_currentClient = (p2p_currentClient + 1) % 5;
-                p2p_currentClientPacketNumber = 0;
-            }
-
-            var packet = p2p_server.sendPacket(p2p_clients[p2p_currentClient].type);
+        var packet = p2p_server.sendPacket();
+        if(packet !== null)
             p2p_travellingPackets.push(packet);
-            p2p_totalSentClientData += packet.packetSize;
-            currentClientFileInfo.fileAmountSent += packet.packetSize;
-            p2p_currentClientPacketNumber++;
-        }
 
         for (var i = 0; i < p2p_travellingPackets.length; i++) {
             for (var j = 0; j < p2p_clients.length; j++) {
@@ -112,19 +140,29 @@ function p2p_updateAnimation() {
 
     for (var j = 0; j < p2p_clients.length; j++)
         p2p_clients[j].draw(p2p_animationCanvas.getContext("2d"));
+
+    if(p2p_tooltip.display){
+        var p2p_context = p2p_animationCanvas.getContext("2d");
+        p2p_context.fillStyle = '#ddd';
+        p2p_context.fillRect(p2p_tooltip.x + 10, p2p_tooltip.y + 10, 120, 45);
+        p2p_context.fillStyle = '#000';
+        p2p_context.strokeRect(p2p_tooltip.x + 10, p2p_tooltip.y + 10, 120, 45);
+        p2p_context.font = "bold 10px Consolas";
+        p2p_context.fillText("Packet", p2p_tooltip.x + 20, p2p_tooltip.y + 25, 100);
+        p2p_context.fillText(p2p_tooltip.source, p2p_tooltip.x + 20, p2p_tooltip.y + 35, 100);
+        p2p_context.fillText(p2p_tooltip.dest, p2p_tooltip.x + 20, p2p_tooltip.y + 45, 100);
+    }
 }
 
 function P2P_reset(){
     p2p_travellingPackets = [];
     p2p_router.packetBuffer = [];
     p2p_timerTick = 0;
-    p2p_currentClient = 0;
-    p2p_totalSentClientData = 0.0;
-    p2p_currentClientPacketNumber = 0;
+    p2p_server.reset();
     p2p_hasntStartedYet = true;
+    p2p_tooltip = {display : false, x : 0, y: 0, source : "", dest : ""};
 
     for (var j = 0; j < p2p_clients.length; j++) {
-        p2p_clients[j].capturedPackets = [];
-        p2p_clients[j].packetBuffer = [];
+        (p2p_clients[j]).reset();
     }
 }

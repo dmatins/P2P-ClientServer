@@ -6,7 +6,7 @@ function drawText(context, x, y, size, color, text){
 // fileInfo is an array of objects that contain {color, proportion}
 function drawFileBar(context, x, y, fileInfo){
     var currentY = y;
-    var width = 5;
+    var width = 7;
     var barSize = 50;
     var info;
     for (var i=0; i < fileInfo.length; i++) {
@@ -19,6 +19,15 @@ function drawFileBar(context, x, y, fileInfo){
     }
     context.fillStyle = "grey";
     context.strokeRect(x, y, width, barSize);
+}
+
+function drawPacketUploadBar(context, x, y, color, currentPercentage){
+    var height = 3;
+    var barSize = 20;
+    context.fillStyle = color;
+    context.fillRect(x, y, barSize * currentPercentage, height);
+    context.fillStyle = "grey";
+    context.strokeRect(x, y, barSize, height);
 }
 
 function adjustLink(link){
@@ -44,6 +53,17 @@ function MyServer(x, y, type) {
     this.y = y;
     this.color = "orange";
     this.link;
+    this.algorithm = "Round Robin";
+    this.uploadSpeed = 10;
+    this.currentClient = 0;
+    this.totalDataSent = 0.0;
+    this.fileSize = 1.0;
+    this.clients = [{type: "Client-1", dataAmount: 0.0},
+     {type: "Client-2", dataAmount: 0.0},
+     {type: "Client-3", dataAmount: 0.0},
+     {type: "Client-4", dataAmount: 0.0},
+     {type: "Client-5", dataAmount: 0.0}];
+    this.currentPacketUploadAmount = 0;
     this.capturedPackets = [{color : this.color, proportion : 1.0, filePosition : 0.0}];
     this.updateLink = function(link){
         this.link = link;
@@ -55,15 +75,48 @@ function MyServer(x, y, type) {
         imageObj.src = './images/database.png';
         context.drawImage(imageObj, this.x, this.y, this.width, this.height);
 
-        drawFileBar(context, this.x - 8, this.y - 8, this.capturedPackets);
+        drawFileBar(context, this.x - 10, this.y, this.capturedPackets);
 
         drawText(context, this.x, this.y - 4, 13, "black", this.type);
 
         context.fillStyle = this.color;
         context.fillRect(this.x + this.width, this.y, 10, 10);
+
+        drawPacketUploadBar(context, this.x, this.y + this.height + 2, this.color, this.currentPacketUploadAmount / this.uploadSpeed);
     }
-    this.sendPacket = function(dest, filePosition) {
-        return new MyPacket(this.color, this.link, this.type, dest, 0.0, 0.01);
+    this.sendPacket = function() {
+        var packet = null;
+        if(this.currentClient < this.clients.length && this.totalDataSent < (this.fileSize * this.clients.length)){
+            this.currentPacketUploadAmount++;
+            if(this.currentPacketUploadAmount >= this.uploadSpeed){
+                this.currentPacketUploadAmount = 0;
+                if(this.algorithm === "Round Robin"){
+                    packet = new MyPacket(this.color, this.link, this.type, this.clients[this.currentClient].type, 0.0, 0.01);
+                    this.clients[this.currentClient].dataAmount += packet.packetSize;
+                    this.totalDataSent += packet.packetSize;
+                    this.currentClient = (this.currentClient + 1) % 5;
+                }else{
+                    packet = new MyPacket(this.color, this.link, this.type, this.clients[this.currentClient].type, 0.0, 0.01);
+                    this.clients[this.currentClient].dataAmount += packet.packetSize;
+                    this.totalDataSent += packet.packetSize;
+                    if(this.clients[this.currentClient].dataAmount >= 1.0){
+                        this.currentClient++;
+                    }
+                }
+            }
+        }
+        return packet;
+    }
+    this.reset = function(){
+        this.currentClient = 0;
+        this.totalDataSent = 0.0;
+        this.currentPacketUploadAmount = 0;
+        this.clients = [{type: "Client-1", dataAmount: 0.0}, 
+        {type: "Client-2", dataAmount: 0.0}, 
+        {type: "Client-3", dataAmount: 0.0},
+        {type: "Client-4", dataAmount: 0.0}, 
+        {type: "Client-5", dataAmount: 0.0}];
+        this.algorithm = "Round Robin";
     }
 }
 
@@ -75,6 +128,7 @@ function MyClient(color, x, y, type) {
     this.x = x;
     this.y = y;
     this.link;
+    this.fileSize = 1.0;
     this.capturedPackets = [];
     this.draw = function(context) {
         var imageObj = new Image();
@@ -86,7 +140,7 @@ function MyClient(color, x, y, type) {
         if(this.type === "Client-4" || this.type === "Client-5")
             drawFileBar(context, this.x + this.width + 8, this.y - 8, this.capturedPackets);
         else 
-            drawFileBar(context, this.x - 8, this.y - 8, this.capturedPackets);
+            drawFileBar(context, this.x - 10, this.y - 8, this.capturedPackets);
 
         drawText(context, this.x, this.y - 4, 13, "black", this.type);
 
@@ -106,14 +160,14 @@ function MyClient(color, x, y, type) {
                 for (var i=0; i < this.capturedPackets.length; i++) {
                     info = this.capturedPackets[i];
                     if(info.color === obj.color){
-                        info.proportion += obj.packetSize;
+                        info.proportion += (obj.packetSize / this.fileSize);
                         newPacket = false;
                     }
                 }
                 if(newPacket){
                     info = {};
                     info.color = obj.color;
-                    info.proportion = obj.packetSize;
+                    info.proportion = obj.packetSize / this.fileSize;
                     info.filePosition = obj.filePosition;
                     this.capturedPackets.push(info);
                 }
@@ -131,8 +185,15 @@ function MyP2PServer(x, y, type, fileInfo) {
     this.y = y;
     this.color = "orange";
     this.link;
+    this.currentClient = 0;
+    this.totalSentClientData = 0.0;
+    this.currentClientPacketNumber = 0;
+    this.uploadSpeed = 10;
+    this.currentPacketUploadAmount = 0;
     this.capturedPackets = [{color : this.color, proportion : 1.0, filePosition : 0.0}];
     this.fileInfo = fileInfo;
+    this.fileSize = 1.0;
+    this.clients = ["Client-1","Client-2","Client-3","Client-4","Client-5"];
     this.updateLink = function(link){
         this.link = link;
     }
@@ -143,15 +204,55 @@ function MyP2PServer(x, y, type, fileInfo) {
         imageObj.src = './images/database.png';
         context.drawImage(imageObj, this.x, this.y, this.width, this.height);
 
-        drawFileBar(context, this.x - 8, this.y - 8, this.capturedPackets);
+        drawFileBar(context, this.x - 10, this.y, this.capturedPackets);
 
         drawText(context, this.x, this.y - 4, 13, "black", this.type);
 
         context.fillStyle = this.color;
         context.fillRect(this.x + this.width, this.y, 10, 10);
+
+        drawPacketUploadBar(context, this.x, this.y + this.height + 2, this.color, this.currentPacketUploadAmount / this.uploadSpeed);
     }
-    this.sendPacket = function(dest) {
-        return new MyPacket(this.color, this.link, this.type, dest, this.fileInfo[dest].filePosition, 0.01);
+    this.sendPacket = function() {
+        var packet = null;
+        if(this.totalSentClientData < this.fileSize){
+            this.currentPacketUploadAmount++;
+            if(this.currentPacketUploadAmount >= this.uploadSpeed){
+                this.currentPacketUploadAmount = 0;
+                var currentClientFileInfo = this.fileInfo[this.clients[this.currentClient]];
+                var count = 0;
+                while(!((currentClientFileInfo.filePercentage * this.fileSize) > currentClientFileInfo.fileAmountSent && this.currentClientPacketNumber < currentClientFileInfo.filePercentage*10)){
+                    this.currentClient = (this.currentClient + 1) % 5;
+                    this.currentClientPacketNumber = 0;
+                    currentClientFileInfo = this.fileInfo[this.clients[this.currentClient]];
+                    count++;
+                    if(count >= 5){
+                        this.currentClientPacketNumber = 0;
+                        this.currentPacketUploadAmount = 0;
+                        break;
+                    }
+                }
+                if((currentClientFileInfo.filePercentage * this.fileSize) > currentClientFileInfo.fileAmountSent && this.currentClientPacketNumber < currentClientFileInfo.filePercentage*10){
+                    var destination = this.clients[this.currentClient];
+                    packet = new MyPacket(this.color, this.link, this.type, destination, this.fileInfo[destination].filePosition, Math.min(0.01, (currentClientFileInfo.filePercentage * this.fileSize) - currentClientFileInfo.fileAmountSent));
+                    this.totalSentClientData += packet.packetSize;
+                    currentClientFileInfo.fileAmountSent += packet.packetSize;
+                    this.currentClientPacketNumber++;
+                }else{
+                    this.totalSentClientData = this.fileSize
+                    this.currentClient = 0;
+                    this.currentClientPacketNumber = 0;
+                    this.currentPacketUploadAmount = 0;
+                }
+            }
+        }
+        return packet;
+    }
+    this.reset = function(){
+        this.currentClient = 0;
+        this.totalSentClientData = 0.0;
+        this.currentClientPacketNumber = 0;
+        this.currentPacketUploadAmount = 0;
     }
 }
 
@@ -164,8 +265,11 @@ function MyP2PClient(color, x, y, type) {
     this.y = y;
     this.link;
     this.uploadSpeed = 10;
+    this.fileSize = 1.0;
+    this.currentPacketUploadAmount = 0;
     this.packetBuffer = [];
     this.capturedPackets = [];
+    this.clients = ["Client-1","Client-2","Client-3","Client-4","Client-5"];
     this.draw = function(context) {
         var imageObj = new Image();
         imageObj.onload = function() {
@@ -176,22 +280,32 @@ function MyP2PClient(color, x, y, type) {
         if(this.type === "Client-4" || this.type === "Client-5")
             drawFileBar(context, this.x + this.width + 8, this.y - 8, this.capturedPackets);
         else 
-            drawFileBar(context, this.x - 8, this.y - 8, this.capturedPackets);
+            drawFileBar(context, this.x - 10, this.y - 8, this.capturedPackets);
 
         drawText(context, this.x, this.y - 4, 13, "black", this.type);
 
         context.fillStyle = this.color;
         context.fillRect(this.x + this.width/2 - 5, this.y + this.height, 10, 10);
+
+        drawPacketUploadBar(context, this.x + 4, this.y + this.height - 6, this.color, this.currentPacketUploadAmount / this.uploadSpeed);
     }
     this.updateLink = function(link){
         this.link = link;
     }
     this.sendPacket = function() {
-        var pack = this.packetBuffer.pop();
+        var pack = this.packetBuffer[this.packetBuffer.length-1];
         if(pack == null)
             return null;
-        else 
-            return new MyPacket(this.color, this.link, this.type, pack.dest, pack.filePosition, pack.packetSize);
+        else {
+            var packet = null
+            this.currentPacketUploadAmount++;
+            if(this.currentPacketUploadAmount >= this.uploadSpeed){
+                this.currentPacketUploadAmount = 0;
+                this.packetBuffer.pop();
+                packet = new MyPacket(this.color, this.link, this.type, pack.dest, pack.filePosition, pack.packetSize);
+            }
+            return packet;
+        }
     }
     this.detectCollision = function(obj) {
         if(obj == null || obj.from === this.type)
@@ -203,24 +317,24 @@ function MyP2PClient(color, x, y, type) {
                 for (var i=0; i < this.capturedPackets.length; i++) {
                     info = this.capturedPackets[i];
                     if(info.color === obj.color){
-                        info.proportion += obj.packetSize;
+                        info.proportion += (obj.packetSize / this.fileSize);
                         newPacket = false;
                     }
                 }
                 if(newPacket){
                     info = {};
                     info.color = obj.color;
-                    info.proportion = obj.packetSize;
+                    info.proportion = (obj.packetSize / this.fileSize);
                     info.filePosition = obj.filePosition;
                     this.capturedPackets.push(info);
                 }
                 if(obj.originallyFrom === "Server"){
-                    for (var j = 0; j < p2p_clients.length; j++) {
-                        if(p2p_clients[j].type !== this.type){
+                    for (var j = 0; j < this.clients.length; j++) {
+                        if(this.clients[j] !== this.type){
                             info = {};
                             info.filePosition = obj.filePosition;
                             info.packetSize = obj.packetSize;
-                            info.dest = p2p_clients[j].type;
+                            info.dest = this.clients[j];
                             this.packetBuffer.push(info);
                         }
                     }
@@ -228,6 +342,11 @@ function MyP2PClient(color, x, y, type) {
                 return true;
             }
         }
+    }
+    this.reset = function(){
+        this.currentPacketUploadAmount = 0;
+        this.packetBuffer = [];
+        this.capturedPackets = [];
     }
 }
 
@@ -274,11 +393,11 @@ function MyPacket(color, link, from, dest, filePosition, packetSize) {
     this.packetSize = packetSize;
     this.filePosition = filePosition;
     this.color = color;
-    this.width = 5;
-    this.height = 5;
+    this.width = 6;
+    this.height = 6;
     this.x = link.x;
     this.y = link.y;
-    this.speed = 7.0;
+    this.speed = 5.0;
     this.destX = link.destX;
     this.destY = link.destY;
     this.draw = function(context) {

@@ -1,13 +1,32 @@
 #clientServer {
-	float : left;
-	width : 50%;
-	padding : 10px 0px 0px 0px;
+	width: 40%;
+	padding: 0px 0px 0px 0px;
+	margin: 0px 0px 0px 0px;
+	float: left;
+}
+	
+#startStopAndReset {
+	width: 5%;
+	padding: 0px 0px 0px 0px;
+	margin: 250px 60px 0px 0px;
+	float: left;
+}
+	
+#peer2peer {
+	clear: both;
+	width: 40%;
+	padding: 0px 0px 0px 0px;
+	margin: 0px 0px 0px 0px;
+	float: left;
 }
 
-#peer2Peer {
-	float : right;
-	width : 50%;
-	padding : 10px 0px 0px 0px;
+#CS_Canvas {
+	margin: 75px 0px 0px 0px;
+}
+
+h1 {
+	padding: 0px 0px 0px 0px;
+	margin: 0px 0px 10px 0px;
 }
 
 canvas {
