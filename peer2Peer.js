@@ -62,7 +62,13 @@ function p2p_updateAnimation() {
             "Client-2" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0},
             "Client-3" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0},
             "Client-4" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0},
-            "Client-5" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0}};
+            "Client-5" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0},
+            "Server" : { isTheServerHandlingExtra : false,
+                clients : {"Client-1" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0}, 
+                "Client-2" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0},
+                "Client-3" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0},
+                "Client-4" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0},
+                "Client-5" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0}}}};
 
             var dropdown = document.getElementById("p2p_fileSize");
             var fileSize = parseInt(dropdown.options[dropdown.selectedIndex].value);
@@ -79,7 +85,8 @@ function p2p_updateAnimation() {
             }
 
             if(serverUpload > totalClientUploads){
-
+                fileInfo["Server"].isTheServerHandlingExtra = true;
+                
             }
 
             var currentFilePosition = 0.0;

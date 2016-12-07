@@ -99,7 +99,7 @@ function MyServer(x, y, type) {
                     packet = new MyPacket(this.color, this.link, this.type, this.clients[this.currentClient].type, 0.0, 0.01);
                     this.clients[this.currentClient].dataAmount += packet.packetSize;
                     this.totalDataSent += packet.packetSize;
-                    if(this.clients[this.currentClient].dataAmount >= 1.0){
+                    if(this.clients[this.currentClient].dataAmount >= this.fileSize){
                         this.currentClient++;
                     }
                 }

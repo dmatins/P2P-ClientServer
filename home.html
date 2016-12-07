@@ -8,8 +8,14 @@
 <script>
     var isRunning = false;
     function toggleRunning(){
-        if(isRunning) isRunning = false;
-        else isRunning = true;
+        if(isRunning){
+            isRunning = false;
+            document.getElementById("starter").innerHTML = "Start";
+        }
+        else{ 
+            isRunning = true;
+            document.getElementById("starter").innerHTML = "Stop";
+        }
     }
     function startAnimation(){
         CS_start();
@@ -17,8 +23,29 @@
     }
     function resetAnimation(){
         isRunning = false;
+        document.getElementById("starter").innerHTML = "Start";
         CS_reset();
         P2P_reset();
+    }
+
+    function toggleDisplayInfo() {
+        var modal = document.getElementById("modalBox");
+        if(modal.style.display == "block")
+            modal.style.display = "none";
+        else
+            modal.style.display = "block";
+    }
+
+    window.onclick = function(e) {
+        var modal = document.getElementById("modalBox");
+        var infoButton = document.getElementById("infobox");
+        if (e.target !== infoButton) {
+            for (var element = e.target; element; element = element.parentNode) {
+                if (element.id === 'modalBox')
+                    return;
+            }
+            modal.style.display = "none";
+        }
     }
 </script>
 <script src="client-server.js"></script>
@@ -48,8 +75,36 @@ File Size :
 </div>
 
 <div id="startStopAndReset">
-<button id="starter" onclick="toggleRunning()">Start/Pause</button>
-<button id="reseter" onclick="resetAnimation()">Reset</button>
+<button class="centerButtons" id="starter" onclick="toggleRunning()">Start</button>
+</br>
+<button class="centerButtons" id="reseter" onclick="resetAnimation()">Reset</button>
+</br>
+<button class="centerButtons" id="infobox" onclick="toggleDisplayInfo()">Info</button>
+</div>
+
+<div class="modal" id="modalBox">
+    <h2>C-S & P2P Information</h2>
+    <button class="close"onclick="toggleDisplayInfo()">X</button>
+    <div style="overflow:auto;height:350px;">
+    
+        <p>Lorem ipsum dolor sit amet, consectetur amis at adipisicing elit. Maiores quaerat est officia aut nam amet ipsum natus corporis adipisci cupiditate voluptas unde totam quae vel error neque odio id etas lasf reiciendis.</p>
+
+        <h3>Smaller Title</h3>
+
+        <p>Lorem ipsum dolor sit amet, consectetur amis at adipisicing elit. Maiores quaerat est officia aut nam amet ipsum natus corporis adipisci cupiditate voluptas unde totam quae vel error neque odio id etas lasf reiciendis.</p>
+
+        <p>Lorem ipsum dolor sit amet, consectetur amis at adipisicing elit. Maiores quaerat est officia aut nam amet ipsum natus corporis adipisci cupiditate voluptas unde totam quae vel error neque odio id etas lasf reiciendis.</p>
+
+        <p>Lorem ipsum dolor sit amet, consectetur amis at adipisicing elit. Maiores quaerat est officia aut nam amet ipsum natus corporis adipisci cupiditate voluptas unde totam quae vel error neque odio id etas lasf reiciendis.</p>
+
+        <p>Lorem ipsum dolor sit amet, consectetur amis at adipisicing elit. Maiores quaerat est officia aut nam amet ipsum natus corporis adipisci cupiditate voluptas unde totam quae vel error neque odio id etas lasf reiciendis.</p>
+
+        <h3>Smaller Title</h3>
+
+        <p>Lorem ipsum dolor sit amet, consectetur amis at adipisicing elit. Maiores quaerat est officia aut nam amet ipsum natus corporis adipisci cupiditate voluptas unde totam quae vel error neque odio id etas lasf reiciendis.</p>
+
+        <p>Lorem ipsum dolor sit amet, consectetur amis at adipisicing elit. Maiores quaerat est officia aut nam amet ipsum natus corporis adipisci cupiditate voluptas unde totam quae vel error neque odio id etas lasf reiciendis.</p>
+    </div>
 </div>
 
 <div id="peer2Peer">

@@ -6,9 +6,10 @@
 }
 	
 #startStopAndReset {
-	width: 5%;
-	padding: 0px 0px 0px 0px;
-	margin: 250px 60px 0px 0px;
+	padding: auto;
+	margin: 250px 60px 0px 35px;
+	text-align:center;
+	position:relative;
 	float: left;
 }
 	
@@ -24,9 +25,33 @@
 	margin: 75px 0px 0px 0px;
 }
 
+:root{
+	--textColor: #007aff;
+	--buttonColor: #5F9EA0;
+}
+
+body {
+	font-family: "Arial";
+	font-size: 90%;
+	position:relative;
+}
+
 h1 {
+	font-size: 2.7em;
 	padding: 0px 0px 0px 0px;
 	margin: 0px 0px 10px 0px;
+	color: var(--textColor);
+}
+
+h2 {
+	font-size: 2.4em;
+	padding: 0px 0px 0px 0px;
+	margin: 0px 0px 10px 0px;
+	color: var(--textColor);
+}
+
+h3 {
+	color: var(--textColor);
 }
 
 canvas {
@@ -45,21 +70,48 @@ select {
 }
 
 button {
-	margin: 5px;
-	background-color: #5F9EA0;
+	background-color: var(--buttonColor);
 	border: none;
 	color: white;
 	text-align: center;
 	padding: 7px 7px 7px 7px;
-	font-size: 12px;
-	border: 1px solid #ccc;
-	border-radius: 3px;
+	font-size: 15px;
+	border: 2px solid #ccc;
+	border-radius: 5px;
 	-webkit-transition-duration: 0.4s; /* Safari */
     transition-duration: 0.4s;
     cursor: pointer;
 }
 
+.centerButtons {
+	position:relative;
+	margin:8px auto;
+}
+
 button:hover {
     background-color: white;
-    color: #5F9EA0;
+    color: var(--buttonColor);
+}
+
+.modal {
+	display: none;
+	position: fixed;
+	top: 40%;
+	left: 40%;
+	width: 600px;
+	height: 400px;
+	margin-left: -200px;
+	margin-top: -150px;
+	background-color: #ffffff;
+	padding: 25px;
+	border-radius: 5px;
+	z-index: 1;	
+	box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+}
+
+.close {
+	position: absolute;
+    top: 15px;
+    right: 15px;
+    margin: 0;
 }
