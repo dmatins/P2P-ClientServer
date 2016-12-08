@@ -58,17 +58,17 @@ function p2p_updateAnimation() {
         p2p_timerTick += 1;
 
         if(p2p_hasntStartedYet){
-            var fileInfo = {"Client-1" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0}, 
-            "Client-2" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0},
-            "Client-3" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0},
-            "Client-4" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0},
-            "Client-5" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0},
+            var fileInfo = {"Client-1" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0, retransmit: true}, 
+            "Client-2" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0, retransmit: true},
+            "Client-3" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0, retransmit: true},
+            "Client-4" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0, retransmit: true},
+            "Client-5" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0, retransmit: true},
             "Server" : { isTheServerHandlingExtra : false,
-                clients : {"Client-1" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0}, 
-                "Client-2" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0},
-                "Client-3" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0},
-                "Client-4" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0},
-                "Client-5" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0}}}};
+                clients : {"Client-1" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0, retransmit: false}, 
+                "Client-2" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0, retransmit: false},
+                "Client-3" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0, retransmit: false},
+                "Client-4" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0, retransmit: false},
+                "Client-5" : {fileAmountSent : 0.0, filePercentage : 0.0, filePosition : 0.0, retransmit: false}}}};
 
             var dropdown = document.getElementById("p2p_fileSize");
             var fileSize = parseInt(dropdown.options[dropdown.selectedIndex].value);
@@ -84,23 +84,40 @@ function p2p_updateAnimation() {
                 totalClientUploads += parseInt(dropdown.options[dropdown.selectedIndex].value);
             }
 
-            if(serverUpload > totalClientUploads){
+            if(serverUpload > (totalClientUploads + serverUpload)/ (p2p_clients.length + 1)){
                 fileInfo["Server"].isTheServerHandlingExtra = true;
-                
+                var serverFilePercentage = (serverUpload - ((totalClientUploads + serverUpload)/p2p_clients.length)) / p2p_clients.length;
+
+                var currentFilePosition = 0.0;
+                for (var j = 0; j < p2p_clients.length; j++) {
+                    dropdown = document.getElementById("p2p_client-"+ (j + 1) +"speed");
+                    var clientUpload = parseInt(dropdown.options[dropdown.selectedIndex].value);
+
+                    p2p_clients[j].uploadSpeed = (1/clientUpload) * 15;
+                    p2p_clients[j].fileSize = fileSize;
+                    fileInfo["Client-"+ (j+1)].filePercentage = (clientUpload/(totalClientUploads)) * (1.0 - serverFilePercentage);
+                    fileInfo["Client-"+ (j+1)].filePosition = currentFilePosition;
+                    currentFilePosition += (clientUpload/(totalClientUploads)) * (1.0 - serverFilePercentage);
+                }
+                for (var j = 0; j < p2p_clients.length; j++) {
+                    p2p_server.fileExtra += serverFilePercentage;
+                    fileInfo["Server"].clients["Client-"+ (j+1)].filePercentage = serverFilePercentage;
+                    fileInfo["Server"].clients["Client-"+ (j+1)].filePosition = currentFilePosition;
+                }
+            } else{
+                var currentFilePosition = 0.0;
+                for (var j = 0; j < p2p_clients.length; j++) {
+                    dropdown = document.getElementById("p2p_client-"+ (j + 1) +"speed");
+                    var clientUpload = parseInt(dropdown.options[dropdown.selectedIndex].value);
+
+                    p2p_clients[j].uploadSpeed = (1/clientUpload) * 15;
+                    p2p_clients[j].fileSize = fileSize;
+                    fileInfo["Client-"+ (j+1)].filePercentage = clientUpload/totalClientUploads;
+                    fileInfo["Client-"+ (j+1)].filePosition = currentFilePosition;
+                    currentFilePosition += clientUpload/totalClientUploads;
+                }
             }
 
-            var currentFilePosition = 0.0;
-            for (var j = 0; j < p2p_clients.length; j++) {
-                dropdown = document.getElementById("p2p_client-"+ (j + 1) +"speed");
-                var clientUpload = parseInt(dropdown.options[dropdown.selectedIndex].value);
-
-                p2p_clients[j].uploadSpeed = (1/clientUpload) * 15;
-                p2p_clients[j].fileSize = fileSize;
-                fileInfo["Client-"+ (j+1)].filePercentage = clientUpload/totalClientUploads;
-                fileInfo["Client-"+ (j+1)].filePosition = currentFilePosition;
-                currentFilePosition += clientUpload/totalClientUploads;
-            }
-            
             p2p_server.fileInfo = fileInfo;
         }
         p2p_hasntStartedYet = false;

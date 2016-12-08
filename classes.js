@@ -91,12 +91,12 @@ function MyServer(x, y, type) {
             if(this.currentPacketUploadAmount >= this.uploadSpeed){
                 this.currentPacketUploadAmount = 0;
                 if(this.algorithm === "Round Robin"){
-                    packet = new MyPacket(this.color, this.link, this.type, this.clients[this.currentClient].type, 0.0, 0.01);
+                    packet = new MyPacket(this.color, this.link, this.type, this.clients[this.currentClient].type, 0.0, 0.01, false);
                     this.clients[this.currentClient].dataAmount += packet.packetSize;
                     this.totalDataSent += packet.packetSize;
                     this.currentClient = (this.currentClient + 1) % 5;
                 }else{
-                    packet = new MyPacket(this.color, this.link, this.type, this.clients[this.currentClient].type, 0.0, 0.01);
+                    packet = new MyPacket(this.color, this.link, this.type, this.clients[this.currentClient].type, 0.0, 0.01, false);
                     this.clients[this.currentClient].dataAmount += packet.packetSize;
                     this.totalDataSent += packet.packetSize;
                     if(this.clients[this.currentClient].dataAmount >= this.fileSize){
@@ -193,6 +193,7 @@ function MyP2PServer(x, y, type, fileInfo) {
     this.capturedPackets = [{color : this.color, proportion : 1.0, filePosition : 0.0}];
     this.fileInfo = fileInfo;
     this.fileSize = 1.0;
+    this.fileExtra = 0.0;
     this.clients = ["Client-1","Client-2","Client-3","Client-4","Client-5"];
     this.updateLink = function(link){
         this.link = link;
@@ -215,31 +216,38 @@ function MyP2PServer(x, y, type, fileInfo) {
     }
     this.sendPacket = function() {
         var packet = null;
-        if(this.totalSentClientData < this.fileSize){
+        if(this.totalSentClientData < this.fileSize + (this.fileExtra * this.fileSize)){
             this.currentPacketUploadAmount++;
             if(this.currentPacketUploadAmount >= this.uploadSpeed){
                 this.currentPacketUploadAmount = 0;
-                var currentClientFileInfo = this.fileInfo[this.clients[this.currentClient]];
+                var currentClientFileInfo;
+                if(this.currentClient < 5) currentClientFileInfo = this.fileInfo[this.clients[this.currentClient]];
+                else currentClientFileInfo = this.fileInfo["Server"].clients[this.clients[this.currentClient - 5]];
                 var count = 0;
                 while(!((currentClientFileInfo.filePercentage * this.fileSize) > currentClientFileInfo.fileAmountSent && this.currentClientPacketNumber < currentClientFileInfo.filePercentage*10)){
-                    this.currentClient = (this.currentClient + 1) % 5;
+                    if(this.fileInfo["Server"].isTheServerHandlingExtra) this.currentClient = (this.currentClient + 1) % 10;
+                    else this.currentClient = (this.currentClient + 1) % 5;
                     this.currentClientPacketNumber = 0;
-                    currentClientFileInfo = this.fileInfo[this.clients[this.currentClient]];
+                    if(this.currentClient < 5) currentClientFileInfo = this.fileInfo[this.clients[this.currentClient]];
+                    else currentClientFileInfo = this.fileInfo["Server"].clients[this.clients[this.currentClient - 5]];
                     count++;
-                    if(count >= 5){
+                    if(count >= 10){
                         this.currentClientPacketNumber = 0;
                         this.currentPacketUploadAmount = 0;
                         break;
                     }
                 }
                 if((currentClientFileInfo.filePercentage * this.fileSize) > currentClientFileInfo.fileAmountSent && this.currentClientPacketNumber < currentClientFileInfo.filePercentage*10){
-                    var destination = this.clients[this.currentClient];
-                    packet = new MyPacket(this.color, this.link, this.type, destination, this.fileInfo[destination].filePosition, Math.min(0.01, (currentClientFileInfo.filePercentage * this.fileSize) - currentClientFileInfo.fileAmountSent));
+                    var destination;
+                    if(this.currentClient < 5) destination = this.clients[this.currentClient];
+                    else destination = this.clients[this.currentClient - 5];
+                    packet = new MyPacket(this.color, this.link, this.type, destination, currentClientFileInfo.filePosition, Math.min(0.01, (currentClientFileInfo.filePercentage * this.fileSize) - currentClientFileInfo.fileAmountSent), currentClientFileInfo.retransmit);
                     this.totalSentClientData += packet.packetSize;
                     currentClientFileInfo.fileAmountSent += packet.packetSize;
                     this.currentClientPacketNumber++;
                 }else{
-                    this.totalSentClientData = this.fileSize
+                    this.totalSentClientData = this.fileSize;
+                    this.fileExtra = 0.0;
                     this.currentClient = 0;
                     this.currentClientPacketNumber = 0;
                     this.currentPacketUploadAmount = 0;
@@ -250,6 +258,7 @@ function MyP2PServer(x, y, type, fileInfo) {
     }
     this.reset = function(){
         this.currentClient = 0;
+        this.fileExtra = 0.0;
         this.totalSentClientData = 0.0;
         this.currentClientPacketNumber = 0;
         this.currentPacketUploadAmount = 0;
@@ -302,7 +311,7 @@ function MyP2PClient(color, x, y, type) {
             if(this.currentPacketUploadAmount >= this.uploadSpeed){
                 this.currentPacketUploadAmount = 0;
                 this.packetBuffer.pop();
-                packet = new MyPacket(this.color, this.link, this.type, pack.dest, pack.filePosition, pack.packetSize);
+                packet = new MyPacket(this.color, this.link, this.type, pack.dest, pack.filePosition, pack.packetSize, pack.retransmit);
             }
             return packet;
         }
@@ -316,7 +325,7 @@ function MyP2PClient(color, x, y, type) {
                 var info;
                 for (var i=0; i < this.capturedPackets.length; i++) {
                     info = this.capturedPackets[i];
-                    if(info.color === obj.color){
+                    if(info.filePosition === obj.filePosition){
                         info.proportion += (obj.packetSize / this.fileSize);
                         newPacket = false;
                     }
@@ -328,12 +337,13 @@ function MyP2PClient(color, x, y, type) {
                     info.filePosition = obj.filePosition;
                     this.capturedPackets.push(info);
                 }
-                if(obj.originallyFrom === "Server"){
+                if(obj.originallyFrom === "Server" && obj.retransmit){
                     for (var j = 0; j < this.clients.length; j++) {
                         if(this.clients[j] !== this.type){
                             info = {};
                             info.filePosition = obj.filePosition;
                             info.packetSize = obj.packetSize;
+                            info.retransmit = true;
                             info.dest = this.clients[j];
                             this.packetBuffer.push(info);
                         }
@@ -377,7 +387,7 @@ function MyRouterNet(x, y) {
         if((this.x <= obj.x && obj.x <= this.x + this.width) || (this.x >= obj.x && this.x <= obj.x + obj.width)){
             if((this.y <= obj.y && obj.y <= this.y + this.height) || (this.y >= obj.y && this.y <= obj.y + obj.height)){
                 var link = this.links[obj.dest];
-                var packet = new MyPacket(obj.color, link, this.type, obj.dest, obj.filePosition, obj.packetSize);
+                var packet = new MyPacket(obj.color, link, this.type, obj.dest, obj.filePosition, obj.packetSize, obj.retransmit);
                 packet.originallyFrom = obj.from;
                 this.packetBuffer.push(packet);
                 return true;
@@ -386,7 +396,7 @@ function MyRouterNet(x, y) {
     }
 }
 
-function MyPacket(color, link, from, dest, filePosition, packetSize) {
+function MyPacket(color, link, from, dest, filePosition, packetSize, retransmit) {
     this.dest = dest;
     this.from = from;
     this.originallyFrom = from;
@@ -400,6 +410,7 @@ function MyPacket(color, link, from, dest, filePosition, packetSize) {
     this.speed = 5.0;
     this.destX = link.destX;
     this.destY = link.destY;
+    this.retransmit = retransmit;
     this.draw = function(context) {
         context.fillStyle = this.color;
         context.fillRect(this.x, this.y, this.width, this.height);
