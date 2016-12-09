@@ -407,7 +407,7 @@ function MyPacket(color, link, from, dest, filePosition, packetSize, retransmit)
     this.height = 6;
     this.x = link.x;
     this.y = link.y;
-    this.speed = 5.0;
+    this.speed = 2.5;
     this.destX = link.destX;
     this.destY = link.destY;
     this.retransmit = retransmit;

@@ -49,7 +49,7 @@ function P2P_start() {
         }
     }, 0);
 
-    setInterval(p2p_updateAnimation, 20);
+    setInterval(p2p_updateAnimation, 10);
 }
 
 function p2p_updateAnimation() {
@@ -77,7 +77,7 @@ function p2p_updateAnimation() {
 
             dropdown = document.getElementById("p2p_serverUploadSpeed");
             var serverUpload = parseInt(dropdown.options[dropdown.selectedIndex].value);
-            p2p_server.uploadSpeed = (1/serverUpload) * 15;
+            p2p_server.uploadSpeed = (1/serverUpload) * 30;
 
             var totalClientUploads = 0;
             for (var j = 0; j < p2p_clients.length; j++) {
@@ -85,16 +85,27 @@ function p2p_updateAnimation() {
                 totalClientUploads += parseInt(dropdown.options[dropdown.selectedIndex].value);
             }
 
-            if(serverUpload > (totalClientUploads + serverUpload)/ (p2p_clients.length + 1)){
+            if(serverUpload > (totalClientUploads)/ (p2p_clients.length)){
                 fileInfo["Server"].isTheServerHandlingExtra = true;
-                var serverFilePercentage = (serverUpload - ((totalClientUploads + serverUpload)/p2p_clients.length)) / p2p_clients.length;
+                var extraData = serverUpload - (totalClientUploads/(p2p_clients.length - 1));
+                var proportionOfAvgClientToServer = (totalClientUploads/(p2p_clients.length - 1)) / serverUpload;
+                var serverFilePercentage = (extraData * (1.0 - proportionOfAvgClientToServer)) / serverUpload;
+                console.log(serverUpload);
+                console.log(totalClientUploads);
+                console.log(extraData);
+                console.log(proportionOfAvgClientToServer);
+                console.log(serverFilePercentage);
+                if(totalClientUploads < (serverUpload  * (2/3)))
+                    serverFilePercentage = ((serverUpload - totalClientUploads) / serverUpload) + serverFilePercentage / (p2p_clients.length + 1);
+                //if(serverFilePercentage < 0.1)
+                //    serverFilePercentage = 0.1;
 
                 var currentFilePosition = 0.0;
                 for (var j = 0; j < p2p_clients.length; j++) {
                     dropdown = document.getElementById("p2p_client-"+ (j + 1) +"speed");
                     var clientUpload = parseInt(dropdown.options[dropdown.selectedIndex].value);
 
-                    p2p_clients[j].uploadSpeed = (1/clientUpload) * 15;
+                    p2p_clients[j].uploadSpeed = (1/clientUpload) * 30;
                     p2p_clients[j].fileSize = fileSize;
                     fileInfo["Client-"+ (j+1)].filePercentage = (clientUpload/(totalClientUploads)) * (1.0 - serverFilePercentage);
                     fileInfo["Client-"+ (j+1)].filePosition = currentFilePosition;
@@ -111,7 +122,7 @@ function p2p_updateAnimation() {
                     dropdown = document.getElementById("p2p_client-"+ (j + 1) +"speed");
                     var clientUpload = parseInt(dropdown.options[dropdown.selectedIndex].value);
 
-                    p2p_clients[j].uploadSpeed = (1/clientUpload) * 15;
+                    p2p_clients[j].uploadSpeed = (1/clientUpload) * 30;
                     p2p_clients[j].fileSize = fileSize;
                     fileInfo["Client-"+ (j+1)].filePercentage = clientUpload/totalClientUploads;
                     fileInfo["Client-"+ (j+1)].filePosition = currentFilePosition;

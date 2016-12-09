@@ -49,7 +49,7 @@ function CS_start() {
             }
         }
     }, 0);
-    setInterval(cs_updateAnimation, 20);
+    setInterval(cs_updateAnimation, 10);
 }
 
 function cs_updateAnimation() {
@@ -63,7 +63,7 @@ function cs_updateAnimation() {
 
             var dropdown = document.getElementById("cs_serverUploadSpeed");
             var serverUpload = parseInt(dropdown.options[dropdown.selectedIndex].value);
-            cs_server.uploadSpeed = (1/serverUpload) * 15;
+            cs_server.uploadSpeed = (1/serverUpload) * 30;
 
             dropdown = document.getElementById("cs_fileSize");
             var fileSize = parseInt(dropdown.options[dropdown.selectedIndex].value);
