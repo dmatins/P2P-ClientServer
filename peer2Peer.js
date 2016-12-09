@@ -90,15 +90,10 @@ function p2p_updateAnimation() {
                 var extraData = serverUpload - (totalClientUploads/(p2p_clients.length - 1));
                 var proportionOfAvgClientToServer = (totalClientUploads/(p2p_clients.length - 1)) / serverUpload;
                 var serverFilePercentage = (extraData * (1.0 - proportionOfAvgClientToServer)) / serverUpload;
-                console.log(serverUpload);
-                console.log(totalClientUploads);
-                console.log(extraData);
-                console.log(proportionOfAvgClientToServer);
-                console.log(serverFilePercentage);
                 if(totalClientUploads < (serverUpload  * (2/3)))
                     serverFilePercentage = ((serverUpload - totalClientUploads) / serverUpload) + serverFilePercentage / (p2p_clients.length + 1);
-                //if(serverFilePercentage < 0.1)
-                //    serverFilePercentage = 0.1;
+                if(serverFilePercentage < 0.01)
+                    serverFilePercentage = 0.01;
 
                 var currentFilePosition = 0.0;
                 for (var j = 0; j < p2p_clients.length; j++) {
