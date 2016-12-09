@@ -87,23 +87,48 @@ File Size :
     <button class="close"onclick="toggleDisplayInfo()">X</button>
     <div style="overflow:auto;height:350px;">
     
-        <p>Lorem ipsum dolor sit amet, consectetur amis at adipisicing elit. Maiores quaerat est officia aut nam amet ipsum natus corporis adipisci cupiditate voluptas unde totam quae vel error neque odio id etas lasf reiciendis.</p>
+        <p>The purpose of this animation is to demonstrate the differences between a server to client file transfer vs a peer to peer file transfer.</p>
 
-        <h3>Smaller Title</h3>
+        <p>To the left or right of every server and client there is a file bar that indicates the amount of the file that the server or client currently holds. As a client downloads packets from the server or another client, the packets fill up the file bar at the position of the file that they came from.</p>
 
-        <p>Lorem ipsum dolor sit amet, consectetur amis at adipisicing elit. Maiores quaerat est officia aut nam amet ipsum natus corporis adipisci cupiditate voluptas unde totam quae vel error neque odio id etas lasf reiciendis.</p>
+        <p>As a server or client uploads a packet, the file upload bar beneath them will begin to fill. When the file upload bar is full, a packet will be released onto the link. This simulates the upload speed for each client or server.</p>
 
-        <p>Lorem ipsum dolor sit amet, consectetur amis at adipisicing elit. Maiores quaerat est officia aut nam amet ipsum natus corporis adipisci cupiditate voluptas unde totam quae vel error neque odio id etas lasf reiciendis.</p>
+        <p>Each packet and file partition is given a color that signifies its source. For the peer to peer file transfer, each client is assigned a portion of the file from the server that it will upload to every other client. This portion of the file is proportional to the upload speed of the client.</p>
 
-        <p>Lorem ipsum dolor sit amet, consectetur amis at adipisicing elit. Maiores quaerat est officia aut nam amet ipsum natus corporis adipisci cupiditate voluptas unde totam quae vel error neque odio id etas lasf reiciendis.</p>
+        <p>If the peer to peer server speed is faster than the average of all upload speeds, then the server will handle an additional file partition that it will send to every client. This additional partition will not be retransmitted by the clients.</p>
 
-        <p>Lorem ipsum dolor sit amet, consectetur amis at adipisicing elit. Maiores quaerat est officia aut nam amet ipsum natus corporis adipisci cupiditate voluptas unde totam quae vel error neque odio id etas lasf reiciendis.</p>
+        <h3>Considerations</h3>
 
-        <h3>Smaller Title</h3>
+        <p>As this is a simulation some aspects are ignored or disregarded. For instance, the propogation speed.</p>
 
-        <p>Lorem ipsum dolor sit amet, consectetur amis at adipisicing elit. Maiores quaerat est officia aut nam amet ipsum natus corporis adipisci cupiditate voluptas unde totam quae vel error neque odio id etas lasf reiciendis.</p>
+        <p>To demonstrate these scenarios the propagation speed is not set to a "true" speed, but set to a much slower speed so the viewer can identify and track individual packets. This causes some delay in the apparent file transfer.</p>
 
-        <p>Lorem ipsum dolor sit amet, consectetur amis at adipisicing elit. Maiores quaerat est officia aut nam amet ipsum natus corporis adipisci cupiditate voluptas unde totam quae vel error neque odio id etas lasf reiciendis.</p>
+        <h3>How to Use</h3>
+
+        <p>Click <b>"Start"</b> to start the animation, and <b>"Stop"</b> to stop the animation.</p>
+
+        <p>Click <b>"Reset"</b> to reset the program to the initial state.</p>
+
+        <p>Click <b>"Info"</b> to view this information screen.</p>
+
+        <p>To view the source and destination of a packet, simply hover over it with your mouse.</p>
+
+        <p>Client-Server:</p>
+
+        <ul>
+            <li>Use the <b>"Server Upload Speed"</b> dropdown to select the speed at which the server sends out packets to the clients.</li>
+            <li>Use the <b>"Client-Server Algorithm"</b> dropdown to select the algorithm the server will use when sending packets. Either <b>"First In First Out"</b>(Send the entire file to each client in order.) or <b>"Round Robin"</b>(Send a part of the file to each client until all clients have the entire file.)</li>
+            <li>Use the <b>"File Size"</b> dropdown to select the size of the file the server will be transferring.</li>
+        </ul>
+
+        <p>Peer-Peer:</p>
+
+        <ul>
+            <li>Use the <b>"Server Upload Speed"</b> dropdown to select the speed at which the server sends out packets to the clients.</li>
+            <li>Use the <b>"File Size"</b> dropdown to select the size of the file the server will be transferring.</li>
+            <li>Use each of the <b>"Client X Upload Speed"</b> dropdowns to select the speed at which the clients share packets.</li>
+        </ul>
+
     </div>
 </div>
 

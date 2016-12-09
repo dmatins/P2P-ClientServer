@@ -33,8 +33,9 @@ function CS_start() {
     cs_animationCanvas = document.getElementById("CS_Canvas");
     cs_animationCanvas.addEventListener('mousemove', function(e) {
         cs_tooltip.display = false;
-        var x = e.pageX - cs_animationCanvas.offsetLeft;
-        var y = e.pageY - cs_animationCanvas.offsetTop;
+        var rect = cs_animationCanvas.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+        var y = e.clientY - rect.top;
 
         for (var i = 0; i < cs_travellingPackets.length; i++) {
             var pak = cs_travellingPackets[i];

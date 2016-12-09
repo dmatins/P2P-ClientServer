@@ -32,8 +32,9 @@ function P2P_start() {
     p2p_animationCanvas = document.getElementById("P2P_Canvas");
     p2p_animationCanvas.addEventListener('mousemove', function(e) {
         p2p_tooltip.display = false;
-        var x = e.pageX - p2p_animationCanvas.offsetLeft;
-        var y = e.pageY - p2p_animationCanvas.offsetTop;
+        var rect = p2p_animationCanvas.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+        var y = e.clientY - rect.top;
 
         for (var i = 0; i < p2p_travellingPackets.length; i++) {
             var pak = p2p_travellingPackets[i];
